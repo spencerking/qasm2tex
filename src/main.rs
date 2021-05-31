@@ -3,7 +3,7 @@ use std::io::{BufRead, BufReader};
 use std::collections::HashMap;
 
 fn generate_tex(qubits: &Vec<String>, gates: &Vec<(String, String)>) {
-    println!("generate tex");
+    // println!("generate tex");
 
     // The tex HashMap uses the qubit names as keys and all of the tex
     // on each line as the values. The qubit_order HashMap maintains
@@ -30,9 +30,12 @@ fn generate_tex(qubits: &Vec<String>, gates: &Vec<(String, String)>) {
 	let qs: Vec<&str> = qtemp.split(",").collect();
 
 	if g == "h" {
-	    let curr_str = tex.get(qtemp).unwrap();
-	    *tex.get_mut(qtemp).unwrap() =  format!("{}{}", curr_str, " & \\gate{H}");
-
+	    // Comment out this let to avoid a mutable vs immutable borrow warning
+	    //let curr_str = tex.get(qtemp).unwrap();
+	    
+	    //*tex.get_mut(qtemp).unwrap() =  format!("{}{}", curr_str, " & \\gate{H}");
+	    tex.insert(qs[0].to_string(), format!("{}{}", tex.get(qs[0]).unwrap(), " & \\gate{H}"));
+	    
 	    let mut keys: Vec<String> = Vec::new();
 	    for (key, value) in &tex {
 		if key != qtemp {
@@ -41,35 +44,48 @@ fn generate_tex(qubits: &Vec<String>, gates: &Vec<(String, String)>) {
 	    }
 
 	    for key in keys {
-		*tex.get_mut(&key).unwrap() = format!("{}{}", tex.get(&key).unwrap(), " & \\qw");
+		//*tex.get_mut(&key).unwrap() = format!("{}{}", tex.get(&key).unwrap(), " & \\qw");
+		tex.insert(key.to_string(), format!("{}{}", tex.get(&key).unwrap(), " & \\qw"));
 	    }
-	}
+	} else if g == "cnot" {
+	    let ctrl = qs[0];
+	    let targ = qs[1];
 
-	// If g is not a single qubit gate, iterate through qs
-	//for q in qs.iter() {
-	//    
-	//}
-	
-	//println!("{}", g);
-	//println!("{:#?}", qs);
+	    // Determine the control and target indices
+	    let i_ctrl = qubit_order.get(&targ.to_string()).unwrap() - qubit_order.get(&ctrl.to_string()).unwrap();
+	    let i_targ = -i_ctrl; //qubit_order.get(&ctrl.to_string()).unwrap() - qubit_order.get(&targ.to_string()).unwrap();
+
+	    tex.insert(ctrl.to_string(), format!("{}{}{}{}", tex.get(ctrl).unwrap(), " & \\ctrl{", i_ctrl, "}"));
+	    tex.insert(targ.to_string(), format!("{}{}{}{}", tex.get(targ).unwrap(), " & \\targ{", i_targ, "}"));
+	    
+	    /*
+	    for q in qs.iter() {
+		
+	    }
+	    */
+	}
     }
 
-    println!("{:#?}", tex);
+    // println!("{:#?}", tex);
     
     /*
     for qubit in qubits.iter() {
 	let s = format!("{}{}{}", "\\lstick{\\ket{", qubit, "}} \\\\");
 	tex.push(s)
     }
+    */
     
     println!("{}", "\\Qcircuit {");
 
-    for line in tex.iter() {
-	println!("{}", line);
+    for qubit in qubits {
+	println!("{}{}", tex.get(qubit).unwrap(), " \\\\");
     }
     
+    // for line in tex.iter() {
+    //	println!("{}", line.1);
+    // }
+    
     println!("{}", '}');
-     */
 }
 
 fn main() {
@@ -128,8 +144,4 @@ fn main() {
     }
 
     generate_tex(&qubits, &gates);
-
-    //let mut tex: HashMap<String, String> = HashMap::new();
-    //tex.insert("q1".to_string(), "test".to_string());
-    //let curr_str = tex.get("q1").unwrap();
 }
