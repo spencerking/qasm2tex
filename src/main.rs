@@ -35,18 +35,6 @@ fn generate_tex(qubits: &Vec<String>, gates: &Vec<(String, String)>) {
 	    
 	    //*tex.get_mut(qtemp).unwrap() =  format!("{}{}", curr_str, " & \\gate{H}");
 	    tex.insert(qs[0].to_string(), format!("{}{}", tex.get(qs[0]).unwrap(), " & \\gate{H}"));
-	    
-	    let mut keys: Vec<String> = Vec::new();
-	    for (key, value) in &tex {
-		if key != qtemp {
-		    keys.push(key.to_string());
-		}
-	    }
-
-	    for key in keys {
-		//*tex.get_mut(&key).unwrap() = format!("{}{}", tex.get(&key).unwrap(), " & \\qw");
-		tex.insert(key.to_string(), format!("{}{}", tex.get(&key).unwrap(), " & \\qw"));
-	    }
 	} else if g == "cnot" {
 	    let ctrl = qs[0];
 	    let targ = qs[1];
@@ -64,6 +52,20 @@ fn generate_tex(qubits: &Vec<String>, gates: &Vec<(String, String)>) {
 	    }
 	    */
 	}
+
+	// Determine which qubits were not updated by this gate
+	let mut keys: Vec<String> = Vec::new();
+	for (key, value) in &tex {
+	    if !qs.contains(&key.as_str()) {
+		keys.push(key.to_string());
+	    }
+	}
+
+	// Extend the wire for all qubits not updated by this gate
+	for key in keys {
+	    //*tex.get_mut(&key).unwrap() = format!("{}{}", tex.get(&key).unwrap(), " & \\qw");
+	    tex.insert(key.to_string(), format!("{}{}", tex.get(&key).unwrap(), " & \\qw"));
+	}	
     }
 
     // println!("{:#?}", tex);
