@@ -29,6 +29,9 @@ fn generate_tex(qubits: &Vec<String>, gates: &Vec<(String, String)>) {
 	let qtemp = &gate.1;
 	let qs: Vec<&str> = qtemp.split(",").collect();
 
+	if g == "nop" {
+	    continue;
+	}
 	if g == "h" {
 	    // Comment out this let to avoid a mutable vs immutable borrow warning
 	    //let curr_str = tex.get(qtemp).unwrap();
@@ -51,6 +54,35 @@ fn generate_tex(qubits: &Vec<String>, gates: &Vec<(String, String)>) {
 		
 	    }
 	    */
+	} else if g == "measure" {
+	    // TODO
+	    // Think about looking ahead to make the measurements line up
+	    // if multiple measurements occur at the same position
+	    tex.insert(qs[0].to_string(), format!("{}{}", tex.get(qs[0]).unwrap(), " & \\meter"));
+	} else if g == "c-x" {
+	    // TODO
+	    // Combine this with the cnot case
+	    let ctrl = qs[0];
+	    let targ = qs[1];
+
+	    // Determine the control and target indices
+	    let i_ctrl = qubit_order.get(&targ.to_string()).unwrap() - qubit_order.get(&ctrl.to_string()).unwrap();
+	    let i_targ = -i_ctrl;
+
+	    tex.insert(ctrl.to_string(), format!("{}{}{}{}", tex.get(ctrl).unwrap(), " & \\ctrl{", i_ctrl, "}"));
+	    tex.insert(targ.to_string(), format!("{}{}", tex.get(targ).unwrap(), " & \\gate{X}"));
+	} else if g == "c-z" {
+	    // TODO
+	    // Combine this with the cnot case
+	    let ctrl = qs[0];
+	    let targ = qs[1];
+
+	    // Determine the control and target indices
+	    let i_ctrl = qubit_order.get(&targ.to_string()).unwrap() - qubit_order.get(&ctrl.to_string()).unwrap();
+	    let i_targ = -i_ctrl;
+
+	    tex.insert(ctrl.to_string(), format!("{}{}{}{}", tex.get(ctrl).unwrap(), " & \\ctrl{", i_ctrl, "}"));
+	    tex.insert(targ.to_string(), format!("{}{}", tex.get(targ).unwrap(), " & \\gate{Z}"));
 	}
 
 	// Determine which qubits were not updated by this gate
@@ -91,7 +123,7 @@ fn generate_tex(qubits: &Vec<String>, gates: &Vec<(String, String)>) {
 }
 
 fn main() {
-    let filename = "/Users/spencerking/Documents/qasm2tex/examples/test1.qasm";
+    let filename = "/Users/spencerking/Documents/qasm2tex/examples/test2.qasm";
     let file = File::open(filename).unwrap();
     let reader = BufReader::new(file);
 
